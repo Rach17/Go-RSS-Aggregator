@@ -35,3 +35,6 @@ go.work.sum
 
 # Dependency directories
 vendor/
+
+# documation
+docs

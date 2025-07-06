@@ -7,9 +7,16 @@ import (
 	"os"       // Importing os for environment variable access
 	"strconv"  // Importing strconv for string conversion
 
+	"github.com/Rach17/Go-RSS-Aggregator/internal/db" // Importing the db package for database queries
+
 	"github.com/joho/godotenv" // Importing godotenv to load environment variables from .env file
 	"github.com/rs/cors"       // Importing rs/cors for handling CORS (Cross-Origin Resource Sharing) in HTTP requests
 )
+
+// config 
+type Config struct {
+	DB *db.Queries
+}
 
 // Middleware type
 type Middleware func(http.Handler) http.Handler
@@ -42,13 +49,12 @@ func corsMiddleware(corsOptions cors.Options) Middleware {
 	}
 }
 
-func Chain(handler http.Handler, middlewares ...Middleware) http.Handler {
+func ChainMiddleware(handler http.Handler, middlewares ...Middleware) http.Handler {
     for i := len(middlewares) - 1; i >= 0; i-- {
         handler = middlewares[i](handler)
     }
     return handler
 }
-
 
 func main() {
 	// Load environment variables from .env file
@@ -79,7 +85,10 @@ func main() {
 
 	router := createRouter() // Create a new router for handling HTTP requests
 	router.HandleFunc("GET /readiness", handlerReadiness) // Register the readiness handler
-	routerWithMiddleware := Chain(router, corsMiddleware(corsOptions)) // Apply CORS middleware to the router
+	router.HandleFunc("GET /error", handlerError) // Register the error handler
+
+	// Swagger UI endpoint
+	routerWithMiddleware := ChainMiddleware(router, corsMiddleware(corsOptions)) // Apply CORS middleware to the router
 
 	server := createServer(routerWithMiddleware, port) // Create a new server with the specified port
 
