@@ -1,12 +1,12 @@
 -- +goose Up
 
-CREATE TABLE users (
-    id UUID PRIMARY KEY,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL
+create table users (
+   id            uuid primary key default gen_random_uuid(),
+   created_at    timestamp with time zone default now() not null,
+   updated_at    timestamp with time zone default null,
+   username      varchar(50) not null unique,
+   password_hash varchar(255) not null
 );
 
 -- +goose Down
-DROP TABLE users;
+drop table users;

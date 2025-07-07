@@ -6,11 +6,13 @@ import (
 	"net/http" // Importing net/http for HTTP server functionality
 	"os"       // Importing os for environment variable access
 	"strconv"  // Importing strconv for string conversion
+	"database/sql" // Importing database/sql for SQL database operations
 
 	"github.com/Rach17/Go-RSS-Aggregator/internal/db" // Importing the db package for database queries
 
 	"github.com/joho/godotenv" // Importing godotenv to load environment variables from .env file
 	"github.com/rs/cors"       // Importing rs/cors for handling CORS (Cross-Origin Resource Sharing) in HTTP requests
+	_ "github.com/lib/pq" // Importing the PostgreSQL driver for database connection (underscore means we don't use it directly)
 )
 
 // config 
@@ -68,10 +70,28 @@ func main() {
 		log.Fatal("PORT environment variable is not set")
 	}
 
+
+
 	// Convert the PORT string to an integer
 	port, err := strconv.Atoi(portString)
 	if err != nil {
-		log.Fatal("Invalid PORT value: %v", err)
+		log.Fatalf("Invalid PORT value: %v", err)
+	}
+
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL environment variable is not set")
+	}
+	connection, err := sql.Open("postgres", dbURL) // Open a connection to the PostgreSQL database using the provided DB_URL
+	if err != nil {
+		log.Fatalf("Failed to connect to the database: %v", err) // Log an
+	}
+	defer connection.Close()
+
+	queries := db.New(connection) // Initialize db.Queries with the connection
+
+	config := &Config{
+		DB: queries, // Set the DB field in the config to the queries instance
 	}
 
 	corsOptions := cors.Options{
@@ -86,6 +106,7 @@ func main() {
 	router := createRouter() // Create a new router for handling HTTP requests
 	router.HandleFunc("GET /readiness", handlerReadiness) // Register the readiness handler
 	router.HandleFunc("GET /error", handlerError) // Register the error handler
+	router.HandleFunc("POST /users", config.handlerCreateUser) // Register the user creation handler
 
 	// Swagger UI endpoint
 	routerWithMiddleware := ChainMiddleware(router, corsMiddleware(corsOptions)) // Apply CORS middleware to the router
