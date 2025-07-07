@@ -9,7 +9,7 @@ import (
 func respondWithJSON(w http.ResponseWriter, status int, data interface{}) {
 	// Encode the data as JSON and write it to the response
 	if jsonData, err := json.Marshal(data); err != nil {
-		log.Println("Error encoding JSON response: %v", data)
+		log.Printf("Error encoding JSON response: %v", data)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	} else {

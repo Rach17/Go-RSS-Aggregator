@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"encoding/json"
+	"log"
 	"github.com/Rach17/Go-RSS-Aggregator/internal/db"
+	"github.com/Rach17/Go-RSS-Aggregator/internal/auth"
 )
 
 func handlerReadiness(w http.ResponseWriter, r *http.Request) {
@@ -47,4 +49,23 @@ func (config *Config) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	respondWithJSON(w, http.StatusCreated, map[string]string{"message": "User created successfully"})
+}
+
+func (config *Config) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request) {
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		log.Printf("Error getting API key: %v", err)
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	user, err := config.DB.GetUserByAPIKey(r.Context(), apiKey)
+	if err != nil {
+		log.Printf("Error retrieving user by API key: %v", err)
+		errorMessage := fmt.Sprintf("Failed to get user: %v", err)
+		respondWithError(w, http.StatusBadRequest, errorMessage)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, user)
 }

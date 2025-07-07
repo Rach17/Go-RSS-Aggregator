@@ -17,4 +17,5 @@ type User struct {
 	UpdatedAt    sql.NullTime
 	Username     string
 	PasswordHash string
+	ApiKey       string
 }
