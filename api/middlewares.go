@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
 	"github.com/Rach17/Go-RSS-Aggregator/service"
 	"github.com/Rach17/Go-RSS-Aggregator/utils"
 	"github.com/rs/cors"
@@ -49,6 +48,7 @@ func NewAuthMiddleware(authService *service.AuthService) *AuthMiddleware {
 
 // contextKey is a custom type for context keys to avoid collisions.
 type contextKey string
+const userContextKey contextKey = "user"
 
 func (am *AuthMiddleware) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	// Middleware to verify API key in the request header
@@ -65,7 +65,6 @@ func (am *AuthMiddleware) authMiddleware(next http.HandlerFunc) http.HandlerFunc
 			utils.RespondWithError(w, http.StatusBadRequest, errorMessage) // Respond with a bad request error
 			return
 		}
-		const userContextKey contextKey = "user"
 		// Store the user in the request context for further processing
 		ctx := context.WithValue(r.Context(), userContextKey, user) // Store the user in the request context
 		next.ServeHTTP(w, r.WithContext(ctx))

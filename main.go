@@ -45,7 +45,9 @@ func main() {
 	userRepo := repository.NewDBUserRepository(connection) // Create a new user repository using the database connection
 	userService := service.NewUserService(userRepo) // Create a new user service using the user
 	authService := service.NewAuthService(userRepo) // Create a new authentication service using the user repository
+	feedRepo := repository.NewDBFeedRepository(connection) // Create a new feed repository using the database connection
+	feedService := service.NewFeedService(feedRepo) // Create a new feed service using the feed repository
 
-	server := api.NewServer(port, userService, authService)
+	server := api.NewServer(port, userService, authService, feedService) // Create a new API server with the specified port and services
 	server.Start()
 }

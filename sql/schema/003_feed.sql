@@ -1,11 +1,14 @@
 -- +goose Up
-CREATE TABLE feeds (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT null,
-    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    url text NOT NULL UNIQUE,
-    title text NOT NULL,
-    description text
+create table feeds (
+   id              uuid primary key default gen_random_uuid(),
+   created_at      timestamp with time zone default now() not null,
+   updated_at      timestamp with time zone default null,
+   title           text not null,
+   url             text not null unique,
+   description     text,
+   language        text not null,
+   last_fetched_at timestamp with time zone default now()
 );
+
 -- +goose Down
+drop table feeds;

@@ -13,14 +13,17 @@ type Server struct {
 	Router      *http.ServeMux
 	UserService *service.UserService
 	AuthService *service.AuthService
+	FeedService  *service.FeedService
 }
 
-func NewServer(port int, userService *service.UserService, authService *service.AuthService) *Server {
+func NewServer(port int, userService *service.UserService, authService *service.AuthService, feedService *service.FeedService) *Server {
 	return &Server{
 		Port:        port,
 		Router:      http.NewServeMux(),
 		UserService: userService,
 		AuthService: authService,
+		FeedService: feedService,
+		
 	}
 
 }
@@ -38,4 +41,7 @@ func (s *Server) RegisterHandler() {
 
 	s.Router.HandleFunc("POST /api/users", Chain(UserHandler.handleCreateUser, corsMiddleware))
 	s.Router.HandleFunc("GET /api/users", Chain(UserHandler.handlerGetUserByAPIKey, AuthMiddleware.authMiddleware, corsMiddleware))
+
+	s.Router.HandleFunc("POST /api/feed", Chain(NewFeedHandler(s.FeedService).handleCreateFeed, AuthMiddleware.authMiddleware, corsMiddleware))
+	s.Router.HandleFunc("GET /api/feed", Chain(NewFeedHandler(s.FeedService).handleGetFeed, AuthMiddleware.authMiddleware, corsMiddleware))
 }

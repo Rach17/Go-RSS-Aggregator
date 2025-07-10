@@ -1,17 +1,17 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-	"github.com/Rach17/Go-RSS-Aggregator/utils"
 	"github.com/Rach17/Go-RSS-Aggregator/service"
+	"github.com/Rach17/Go-RSS-Aggregator/utils"
 )
 
 func handlerReadiness(w http.ResponseWriter, r *http.Request) {
 	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "ready"})
-}	
+}
 
 type UserHandler struct {
 	UserService *service.UserService
@@ -29,7 +29,6 @@ func (handler *UserHandler) handleCreateUser(w http.ResponseWriter, r *http.Requ
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-
 
 	var params parameters = parameters{}
 	var decoder *json.Decoder = json.NewDecoder(r.Body)
@@ -57,4 +56,56 @@ func (handler *UserHandler) handlerGetUserByAPIKey(w http.ResponseWriter, r *htt
 		return
 	}
 	utils.RespondWithJSON(w, http.StatusOK, user)
+}
+
+type FeedHandler struct {
+	FeedService *service.FeedService
+}
+
+func NewFeedHandler(feedService *service.FeedService) *FeedHandler {
+	return &FeedHandler{
+		FeedService: feedService,
+	}
+}
+
+func (h *FeedHandler) handleCreateFeed(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		URL string `json:"url"`
+	}
+
+	var params parameters
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&params); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	// Create feed (business logic)
+	feed, err := h.FeedService.CreateFeed(r.Context(), params.URL)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to create feed: %v", err))
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusCreated, feed)
+}
+
+func (h *FeedHandler) handleGetFeed(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		URL string `json:"url"`
+	}
+	var params parameters
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&params); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	feed, err := h.FeedService.GetFeedByURL(r.Context(), params.URL)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get feeds: %v", err))
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, feed)
 }

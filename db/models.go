@@ -11,11 +11,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type Feed struct {
+	ID            uuid.UUID      `json:"id"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     sql.NullTime   `json:"updated_at"`
+	Title         string         `json:"title"`
+	Url           string         `json:"url"`
+	Description   sql.NullString `json:"description"`
+	Language      string         `json:"language"`
+	LastFetchedAt sql.NullTime   `json:"last_fetched_at"`
+}
+
 type User struct {
-	ID           uuid.UUID
-	CreatedAt    time.Time
-	UpdatedAt    sql.NullTime
-	Username     string
-	PasswordHash string
-	ApiKey       string
+	ID           uuid.UUID    `json:"id"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
+	Username     string       `json:"username"`
+	PasswordHash string       `json:"password_hash"`
+	ApiKey       string       `json:"api_key"`
 }
