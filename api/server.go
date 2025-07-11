@@ -42,6 +42,8 @@ func (s *Server) RegisterHandler() {
 	s.Router.HandleFunc("POST /api/users", Chain(UserHandler.handleCreateUser, corsMiddleware))
 	s.Router.HandleFunc("GET /api/users", Chain(UserHandler.handlerGetUserByAPIKey, AuthMiddleware.authMiddleware, corsMiddleware))
 
-	s.Router.HandleFunc("POST /api/feed", Chain(NewFeedHandler(s.FeedService).handleCreateFeed, AuthMiddleware.authMiddleware, corsMiddleware))
-	s.Router.HandleFunc("GET /api/feed", Chain(NewFeedHandler(s.FeedService).handleGetFeed, AuthMiddleware.authMiddleware, corsMiddleware))
+	s.Router.HandleFunc("POST /api/feed", Chain(NewFeedHandler(s.FeedService, s.UserService).handleCreateFeed, AuthMiddleware.authMiddleware, corsMiddleware))
+	s.Router.HandleFunc("GET /api/feed", Chain(NewFeedHandler(s.FeedService, s.UserService).handleGetFeed, AuthMiddleware.authMiddleware, corsMiddleware))
+	s.Router.HandleFunc("GET /api/feeds", Chain(NewFeedHandler(s.FeedService, s.UserService).handleGetFeeds, AuthMiddleware.authMiddleware, corsMiddleware))
+	s.Router.HandleFunc("POST /api/following", Chain(NewFeedHandler(s.FeedService, s.UserService).handleFollowFeed, AuthMiddleware.authMiddleware, corsMiddleware))
 }

@@ -11,7 +11,9 @@ type FeedRepository interface {
 	CreateFeed(ctx context.Context, title, url, description, language string) (db.Feed, error)
 	GetFeedByID(ctx context.Context, id uuid.UUID) (db.Feed, error)
 	GetFeedByURL(ctx context.Context, url string) (db.Feed, error)
-	UpdateFeedLastFetchedAt(ctx context.Context, id uuid.UUID) error
+	UpdateFeedLastFetchedAt(ctx context.Context, url string) error
+	GetAllFeeds(ctx context.Context) ([]db.Feed, error)
+	FollowFeed(ctx context.Context, userID uuid.UUID, feedID uuid.UUID) error
 }
 
 type DBFeedRepository struct {
@@ -52,7 +54,21 @@ func (r *DBFeedRepository) GetFeedByURL(ctx context.Context, url string) (db.Fee
 }
 
 
-func (r *DBFeedRepository) UpdateFeedLastFetchedAt(ctx context.Context, id uuid.UUID) error {
-	return r.queries.UpdateFeedLastFetchedAt(ctx, id)
+func (r *DBFeedRepository) UpdateFeedLastFetchedAt(ctx context.Context, url string) error {
+	return r.queries.UpdateFeedLastFetchedAt(ctx, url)
 }
 
+func (r *DBFeedRepository) GetAllFeeds(ctx context.Context) ([]db.Feed, error) {
+	feeds, err := r.queries.GetAllFeeds(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return feeds, nil
+}
+
+func (r *DBFeedRepository) FollowFeed(ctx context.Context, userID uuid.UUID, feedID uuid.UUID) error {
+	return r.queries.FollowFeed(ctx, db.FollowFeedParams{
+		UserID: userID,
+		FeedID: feedID,
+	})
+}

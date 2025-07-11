@@ -22,6 +22,14 @@ type Feed struct {
 	LastFetchedAt sql.NullTime   `json:"last_fetched_at"`
 }
 
+type FeedFollow struct {
+	ID        uuid.UUID    `json:"id"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+	UserID    uuid.UUID    `json:"user_id"`
+	FeedID    uuid.UUID    `json:"feed_id"`
+}
+
 type User struct {
 	ID           uuid.UUID    `json:"id"`
 	CreatedAt    time.Time    `json:"created_at"`

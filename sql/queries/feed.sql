@@ -12,5 +12,13 @@ SELECT * FROM feeds WHERE url = $1;
 -- name: UpdateFeedLastFetchedAt :exec
 UPDATE feeds
 SET last_fetched_at = NOW()
-WHERE id = $1;
+WHERE url = $1;
 
+-- name: GetAllFeeds :many
+SELECT * FROM feeds;
+
+
+-- name: FollowFeed :exec
+INSERT INTO feed_follow (user_id, feed_id)
+VALUES ($1, $2)
+ON CONFLICT (user_id, feed_id) DO NOTHING;

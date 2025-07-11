@@ -46,6 +46,58 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 	return i, err
 }
 
+const followFeed = `-- name: FollowFeed :exec
+INSERT INTO feed_follow (user_id, feed_id)
+VALUES ($1, $2)
+ON CONFLICT (user_id, feed_id) DO NOTHING
+`
+
+type FollowFeedParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	FeedID uuid.UUID `json:"feed_id"`
+}
+
+func (q *Queries) FollowFeed(ctx context.Context, arg FollowFeedParams) error {
+	_, err := q.db.ExecContext(ctx, followFeed, arg.UserID, arg.FeedID)
+	return err
+}
+
+const getAllFeeds = `-- name: GetAllFeeds :many
+SELECT id, created_at, updated_at, title, url, description, language, last_fetched_at FROM feeds
+`
+
+func (q *Queries) GetAllFeeds(ctx context.Context) ([]Feed, error) {
+	rows, err := q.db.QueryContext(ctx, getAllFeeds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Feed
+	for rows.Next() {
+		var i Feed
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Url,
+			&i.Description,
+			&i.Language,
+			&i.LastFetchedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getFeedByID = `-- name: GetFeedByID :one
 SELECT id, created_at, updated_at, title, url, description, language, last_fetched_at FROM feeds WHERE id = $1
 `
@@ -89,10 +141,10 @@ func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
 const updateFeedLastFetchedAt = `-- name: UpdateFeedLastFetchedAt :exec
 UPDATE feeds
 SET last_fetched_at = NOW()
-WHERE id = $1
+WHERE url = $1
 `
 
-func (q *Queries) UpdateFeedLastFetchedAt(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, updateFeedLastFetchedAt, id)
+func (q *Queries) UpdateFeedLastFetchedAt(ctx context.Context, url string) error {
+	_, err := q.db.ExecContext(ctx, updateFeedLastFetchedAt, url)
 	return err
 }
