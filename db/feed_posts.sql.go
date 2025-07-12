@@ -90,3 +90,36 @@ func (q *Queries) GetFeedPosts(ctx context.Context, url string) ([]GetFeedPostsR
 	}
 	return items, nil
 }
+
+const getFeedPostsUrlAndTitle = `-- name: GetFeedPostsUrlAndTitle :many
+select url, title from feed_posts
+where feed_id = $1
+`
+
+type GetFeedPostsUrlAndTitleRow struct {
+	Url   string `json:"url"`
+	Title string `json:"title"`
+}
+
+func (q *Queries) GetFeedPostsUrlAndTitle(ctx context.Context, feedID uuid.UUID) ([]GetFeedPostsUrlAndTitleRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeedPostsUrlAndTitle, feedID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedPostsUrlAndTitleRow
+	for rows.Next() {
+		var i GetFeedPostsUrlAndTitleRow
+		if err := rows.Scan(&i.Url, &i.Title); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

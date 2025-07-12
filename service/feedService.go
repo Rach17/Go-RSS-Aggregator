@@ -203,6 +203,29 @@ func (fs *FeedService) UpdateFeed(ctx context.Context, url string) error {
 		return nil
 	}
 
+	if len(fetchedFeed.Channel.Items) == 0 {
+		log.Printf("No items found in feed: %s", fetchedFeed.Channel.Title)
+		return nil
+	}
+
+
+	existingPosts, err := fs.PostRepo.GetFeedPostsUrlAndTitle(ctx, feed.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get existing posts: %w", err)
+	}
+
+	for _, item := range fetchedFeed.Channel.Items {
+		// Check if the post already exists
+		if _, exists := existingPosts[item.Link]; exists {
+			log.Printf("Post already exists: %s", item.Title)
+			continue
+		}
+		// Create new post
+		if err := fs.PostRepo.Create(ctx, feed.ID, item.Title, item.Description, item.Link, item.Author, item.PublishedAt); err != nil {
+			return fmt.Errorf("failed to create post: %w", err)
+		}
+	}
+
 	// Update feed last fetched time
 	if err := fs.FeedRepo.UpdateFeedLastFetchedAt(ctx, url); err != nil {
 		return fmt.Errorf("failed to update feed last fetched time: %w", err)

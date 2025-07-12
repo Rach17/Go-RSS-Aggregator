@@ -11,6 +11,7 @@ import (
 type FeedPostRepository interface {
 	Create(ctx context.Context, feedID uuid.UUID, title, description, url, author string, publishedAt time.Time) error
 	GetFeedPosts(ctx context.Context, feedURL string) ([]db.FeedPost, error)
+	GetFeedPostsUrlAndTitle(ctx context.Context, feedID uuid.UUID) (map[string]string, error)
 
 }
 
@@ -59,3 +60,15 @@ func (r *DBFeedPostRepository) GetFeedPosts(ctx context.Context, feedURL string)
 	return feedPosts, nil
 }
 
+func (r *DBFeedPostRepository) GetFeedPostsUrlAndTitle(ctx context.Context, feedID uuid.UUID) (map[string]string, error) {
+	posts, err := r.queries.GetFeedPostsUrlAndTitle(ctx, feedID)
+	if err != nil {
+		return nil, err
+	}
+
+	urlTitleMap := make(map[string]string)
+	for _, post := range posts {
+		urlTitleMap[post.Url] = post.Title
+	}
+	return urlTitleMap, nil
+}
