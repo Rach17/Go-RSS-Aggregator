@@ -220,8 +220,16 @@ func (fs *FeedService) UpdateFeed(ctx context.Context, url string) error {
 			log.Printf("Post already exists: %s", item.Title)
 			continue
 		}
+
+		pubAtdate, err := utils.ParseRSSDate(item.PublishedAt)
+		if err != nil {
+			log.Printf("Failed to parse date for item %s: %v", item.Title,
+				err)
+			// Use current time as fallback
+			pubAtdate = time.Now()
+		}
 		// Create new post
-		if err := fs.PostRepo.Create(ctx, feed.ID, item.Title, item.Description, item.Link, item.Author, item.PublishedAt); err != nil {
+		if err := fs.PostRepo.Create(ctx, feed.ID, item.Title, item.Description, item.Link, item.Author, pubAtdate); err != nil {
 			return fmt.Errorf("failed to create post: %w", err)
 		}
 	}
