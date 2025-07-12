@@ -13,10 +13,6 @@ import (
 	_ "github.com/lib/pq" // Importing the PostgreSQL driver for database connection (underscore means we don't use it directly)
 )
 
-
-
-
-
 func main() {
 	// Load environment variables from .env file
 	err := godotenv.Load(".env")
@@ -46,8 +42,10 @@ func main() {
 	userService := service.NewUserService(userRepo) // Create a new user service using the user
 	authService := service.NewAuthService(userRepo) // Create a new authentication service using the user repository
 	feedRepo := repository.NewDBFeedRepository(connection) // Create a new feed repository using the database connection
-	feedService := service.NewFeedService(feedRepo) // Create a new feed service using the feed repository
+	feedPostRepo := repository.NewDBFeedPostRepository(connection) // Create a new feed post repository using the database connection
+	feedService := service.NewFeedService(feedRepo, feedPostRepo) // Create a new feed service using the feed repository
+	feedPostService := service.NewFeedPostService(feedRepo, feedPostRepo) // Create a new feed post service using the feed and feed post repositories
 
-	server := api.NewServer(port, userService, authService, feedService) // Create a new API server with the specified port and services
+	server := api.NewServer(port, userService, authService, feedService, feedPostService) // Create a new API server with the specified port and services
 	server.Start()
 }

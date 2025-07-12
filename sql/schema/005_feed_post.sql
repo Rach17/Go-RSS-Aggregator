@@ -1,5 +1,5 @@
 -- +goose Up
-create table feed_post (
+create table feed_posts (
     id              uuid primary key default gen_random_uuid(),
     created_at      timestamp with time zone default now() not null,
     updated_at      timestamp with time zone default null,
@@ -12,4 +12,4 @@ create table feed_post (
 );
 
 -- +goose Down
-drop table feed_post;
+drop table feed_posts;

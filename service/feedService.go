@@ -14,17 +14,20 @@ import (
 	"github.com/Rach17/Go-RSS-Aggregator/data"
 	"github.com/Rach17/Go-RSS-Aggregator/db"
 	"github.com/Rach17/Go-RSS-Aggregator/repository"
+	"github.com/Rach17/Go-RSS-Aggregator/utils"
 	"github.com/google/uuid"
 )
 
 type FeedService struct {
-	Repo       repository.FeedRepository
+	FeedRepo       repository.FeedRepository
+	PostRepo       repository.FeedPostRepository
 	HTTPClient *http.Client
 }
 
-func NewFeedService(repo repository.FeedRepository) *FeedService {
+func NewFeedService(feedRepo repository.FeedRepository, postRepo repository.FeedPostRepository) *FeedService {
 	return &FeedService{
-		Repo: repo,
+		FeedRepo: feedRepo,
+		PostRepo: postRepo,
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -46,11 +49,19 @@ func (fs *FeedService) CreateFeed(ctx context.Context, feedURL string) (db.Feed,
 		log.Printf("Feed already exists: %s", feedURL)
 		return db.Feed{}, fmt.Errorf("feed already exists")
 	}
-	savedFeed, err := fs.Repo.CreateFeed(ctx, feed.Channel.Title, feedURL, feed.Channel.Description, feed.Channel.Language)
+	savedFeed, err := fs.FeedRepo.CreateFeed(ctx, feed.Channel.Title, feedURL, feed.Channel.Description, feed.Channel.Language)
 	if err != nil {
 		log.Printf("Error creating feed: %v", err)
 		return db.Feed{}, fmt.Errorf("failed to create feed: %w", err)
 	}
+
+	log.Printf("First Post in this feed is about: %s", feed.Channel.Items[0].Title)
+	// Create feed posts
+	if err := fs.CreateFeedPosts(ctx, savedFeed.ID, feed.Channel.Items); err != nil {
+		log.Printf("Error creating feed posts: %v", err)
+		return db.Feed{}, fmt.Errorf("failed to create feed posts: %w", err)
+	}
+
 	return savedFeed, nil
 }
 
@@ -97,7 +108,7 @@ func (fs *FeedService) validateURL(feedURL string) error {
 }
 
 func (fs *FeedService) FeedExists(ctx context.Context, feedURL string) (bool, error) {
-	feed, err := fs.Repo.GetFeedByURL(ctx, feedURL)
+	feed, err := fs.FeedRepo.GetFeedByURL(ctx, feedURL)
 	if err != nil {
 		// Handle "no rows in result set" as normal case - feed doesn't exist
 		if strings.Contains(err.Error(), "no rows in result set") ||
@@ -149,7 +160,7 @@ func (fs *FeedService) parseResponse(body io.Reader) (data.RSSFeed, error) {
 }
 
 func (fs *FeedService) GetFeedByURL(ctx context.Context, feedURL string) (db.Feed, error) {
-	feed, err := fs.Repo.GetFeedByURL(ctx, feedURL)
+	feed, err := fs.FeedRepo.GetFeedByURL(ctx, feedURL)
 	if err != nil {
 		return db.Feed{}, fmt.Errorf("failed to get feed by URL: %w", err)
 	}
@@ -158,7 +169,7 @@ func (fs *FeedService) GetFeedByURL(ctx context.Context, feedURL string) (db.Fee
 
 
 func (fs *FeedService) GetAllFeeds(ctx context.Context) ([]db.Feed, error) {
-	feeds, err := fs.Repo.GetAllFeeds(ctx)
+	feeds, err := fs.FeedRepo.GetAllFeeds(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all feeds: %w", err)
 	}
@@ -167,7 +178,7 @@ func (fs *FeedService) GetAllFeeds(ctx context.Context) ([]db.Feed, error) {
 
 
 func (fs *FeedService) UpdateFeed(ctx context.Context, url string) error {
-	feed, err := fs.Repo.GetFeedByURL(ctx, url)
+	feed, err := fs.FeedRepo.GetFeedByURL(ctx, url)
 	if err != nil {
 		return fmt.Errorf("failed to get feed by URL: %w", err)
 	}
@@ -193,16 +204,17 @@ func (fs *FeedService) UpdateFeed(ctx context.Context, url string) error {
 	}
 
 	// Update feed last fetched time
-	if err := fs.Repo.UpdateFeedLastFetchedAt(ctx, url); err != nil {
+	if err := fs.FeedRepo.UpdateFeedLastFetchedAt(ctx, url); err != nil {
 		return fmt.Errorf("failed to update feed last fetched time: %w", err)
 	}
+
 
 	log.Printf("Successfully fetched and updated feed: %s", fetchedFeed.Channel.Title)
 	return nil
 }
 
 func (fs *FeedService) FollowFeed(ctx context.Context, feedURL string, userID uuid.UUID)  error {
-	feed, err := fs.Repo.GetFeedByURL(ctx, feedURL)
+	feed, err := fs.FeedRepo.GetFeedByURL(ctx, feedURL)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") || strings.Contains(err.Error(), "sql: no rows") {
 			return fmt.Errorf("feed does not exist: %w", err)
@@ -214,7 +226,7 @@ func (fs *FeedService) FollowFeed(ctx context.Context, feedURL string, userID uu
 	}
 
 	// Associate the feed with the user
-	if err := fs.Repo.FollowFeed(ctx, userID, feed.ID); err != nil {
+	if err := fs.FeedRepo.FollowFeed(ctx, userID, feed.ID); err != nil {
 		return fmt.Errorf("failed to follow feed: %w", err)
 	}
 
@@ -228,9 +240,25 @@ func (fs *FeedService) CreateAndFollowFeed(ctx context.Context, feedURL string, 
 	}
 
 	// Follow the newly created feed
-	if err := fs.Repo.FollowFeed(ctx, userID, feed.ID); err != nil {
+	if err := fs.FeedRepo.FollowFeed(ctx, userID, feed.ID); err != nil {
 		return db.Feed{}, fmt.Errorf("failed to follow feed: %w", err)
 	}
 
 	return feed, nil
+}
+
+
+func (fs *FeedService) CreateFeedPosts(ctx context.Context, feedID uuid.UUID, items []data.FeedPost) error {
+	for _, item := range items {
+		pubAtdate, err := utils.ParseRSSDate(item.PublishedAt)
+        if err != nil {
+            log.Printf("Failed to parse date for item %s: %v", item.Title, err)
+            // Use current time as fallback
+            pubAtdate = time.Now()
+        }
+		if err := fs.PostRepo.Create(ctx, feedID, item.Title, item.Description, item.Link, item.Author, pubAtdate); err != nil {
+			return fmt.Errorf("failed to create post: %w", err)
+		}
+	}
+	return nil
 }

@@ -16,6 +16,15 @@ type Channel struct {
 	Link        string `xml:"link"`
 	Language    string `xml:"language"`
 	LastBuildDate string `xml:"lastBuildDate"`
+	Items       []FeedPost `xml:"item"`
+}
+
+type FeedPost struct {
+	Title       string `xml:"title"`
+	Description string `xml:"description"`
+	Link        string `xml:"link"`
+	PublishedAt string `xml:"pubDate"`
+	Author      string `xml:"author"`
 }
 
 func (f *RSSFeed) DbFeedToRSSFeed(feed db.Feed) {
