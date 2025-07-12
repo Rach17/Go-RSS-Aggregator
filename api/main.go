@@ -1,11 +1,10 @@
-package main
+package api
 
 import (
 	"log"      // Importing log for logging errors and messages
 	"os"       // Importing os for environment variable access
 	"strconv"  // Importing strconv for string conversion
 	"database/sql" // Importing database/sql for SQL database operations
-	"github.com/Rach17/Go-RSS-Aggregator/api" // Importing the api package for API server functionality
 	"github.com/Rach17/Go-RSS-Aggregator/repository" // Importing the repository package for database interactions
 	"github.com/Rach17/Go-RSS-Aggregator/service" // Importing the service package for business logic
 
@@ -46,6 +45,6 @@ func main() {
 	feedService := service.NewFeedService(feedRepo, feedPostRepo) // Create a new feed service using the feed repository
 	feedPostService := service.NewFeedPostService(feedRepo, feedPostRepo) // Create a new feed post service using the feed and feed post repositories
 
-	server := api.NewServer(port, userService, authService, feedService, feedPostService) // Create a new API server with the specified port and services
+	server := NewServer(port, userService, authService, feedService, feedPostService) // Create a new API server with the specified port and services
 	server.Start()
 }
