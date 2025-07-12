@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-
 	"github.com/Rach17/Go-RSS-Aggregator/service"
+
 )
 
 type Server struct {
