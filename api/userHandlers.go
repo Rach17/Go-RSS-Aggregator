@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -9,9 +9,6 @@ import (
 	"github.com/Rach17/Go-RSS-Aggregator/utils"
 )
 
-func handlerReadiness(w http.ResponseWriter, r *http.Request) {
-	utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "ready"})
-}
 
 type UserHandler struct {
 	UserService *service.UserService

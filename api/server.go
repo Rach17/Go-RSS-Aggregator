@@ -1,11 +1,11 @@
-package api
+package main
 
 import (
 	"log"
 	"net/http"
 	"strconv"
 	"github.com/Rach17/Go-RSS-Aggregator/service"
-
+	"github.com/Rach17/Go-RSS-Aggregator/utils"
 )
 
 type Server struct {
@@ -36,7 +36,9 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) RegisterHandler() {
-	s.Router.HandleFunc("GET /api/health", Chain(handlerReadiness, corsMiddleware))
+	s.Router.HandleFunc("GET /api/health", Chain(func(w http.ResponseWriter, r *http.Request) {
+		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "ready"})
+	}, corsMiddleware))
 	AuthMiddleware := NewAuthMiddleware(s.AuthService)
 	UserHandler := NewUserHandler(s.UserService)
 	FeedHandler := NewFeedHandler(s.FeedService, s.UserService)

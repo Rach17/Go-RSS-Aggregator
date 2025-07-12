@@ -1,15 +1,16 @@
-package api
+package main
 
 import (
-	"log"      // Importing log for logging errors and messages
-	"os"       // Importing os for environment variable access
-	"strconv"  // Importing strconv for string conversion
 	"database/sql" // Importing database/sql for SQL database operations
+	"log"          // Importing log for logging errors and messages
+	"os"           // Importing os for environment variable access
+	"strconv"      // Importing strconv for string conversion
+
 	"github.com/Rach17/Go-RSS-Aggregator/repository" // Importing the repository package for database interactions
-	"github.com/Rach17/Go-RSS-Aggregator/service" // Importing the service package for business logic
+	"github.com/Rach17/Go-RSS-Aggregator/service"    // Importing the service package for business logic
 
 	"github.com/joho/godotenv" // Importing godotenv to load environment variables from .env file
-	_ "github.com/lib/pq" // Importing the PostgreSQL driver for database connection (underscore means we don't use it directly)
+	_ "github.com/lib/pq"      // Importing the PostgreSQL driver for database connection (underscore means we don't use it directly)
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	}
 	// Get the PORT environment variable
 	portString := os.Getenv("PORT")
-	if portString == "" || portString == "0"{
+	if portString == "" || portString == "0" {
 		log.Fatal("PORT environment variable is not set")
 	}
 	port, err := strconv.Atoi(portString) // Convert the port string to an integer
@@ -36,13 +37,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err) // Log an error if the connection fails
 	}
-	defer connection.Close() // Ensure the database connection is closed when the function exits
-	userRepo := repository.NewDBUserRepository(connection) // Create a new user repository using the database connection
-	userService := service.NewUserService(userRepo) // Create a new user service using the user
-	authService := service.NewAuthService(userRepo) // Create a new authentication service using the user repository
-	feedRepo := repository.NewDBFeedRepository(connection) // Create a new feed repository using the database connection
-	feedPostRepo := repository.NewDBFeedPostRepository(connection) // Create a new feed post repository using the database connection
-	feedService := service.NewFeedService(feedRepo, feedPostRepo) // Create a new feed service using the feed repository
+	defer connection.Close()                                              // Ensure the database connection is closed when the function exits
+	userRepo := repository.NewDBUserRepository(connection)                // Create a new user repository using the database connection
+	userService := service.NewUserService(userRepo)                       // Create a new user service using the user
+	authService := service.NewAuthService(userRepo)                       // Create a new authentication service using the user repository
+	feedRepo := repository.NewDBFeedRepository(connection)                // Create a new feed repository using the database connection
+	feedPostRepo := repository.NewDBFeedPostRepository(connection)        // Create a new feed post repository using the database connection
+	feedService := service.NewFeedService(feedRepo, feedPostRepo)         // Create a new feed service using the feed repository
 	feedPostService := service.NewFeedPostService(feedRepo, feedPostRepo) // Create a new feed post service using the feed and feed post repositories
 
 	server := NewServer(port, userService, authService, feedService, feedPostService) // Create a new API server with the specified port and services
