@@ -14,6 +14,7 @@ type FeedRepository interface {
 	UpdateFeedLastFetchedAt(ctx context.Context, url string) error
 	GetAllFeeds(ctx context.Context) ([]db.Feed, error)
 	FollowFeed(ctx context.Context, userID uuid.UUID, feedID uuid.UUID) error
+	GetLastFetchedFeeds(ctx context.Context, limit int) ([]db.Feed, error)
 }
 
 type DBFeedRepository struct {
@@ -71,4 +72,12 @@ func (r *DBFeedRepository) FollowFeed(ctx context.Context, userID uuid.UUID, fee
 		UserID: userID,
 		FeedID: feedID,
 	})
+}
+
+func (r *DBFeedRepository) GetLastFetchedFeeds(ctx context.Context, limit int) ([]db.Feed, error) {
+	feeds, err := r.queries.GetLastFetchedFeeds(ctx, int32(limit))
+	if err != nil {
+		return nil, err
+	}
+	return feeds, nil
 }

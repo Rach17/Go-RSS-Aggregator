@@ -138,6 +138,44 @@ func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
 	return i, err
 }
 
+const getLastFetchedFeeds = `-- name: GetLastFetchedFeeds :many
+SELECT id, created_at, updated_at, title, url, description, language, last_fetched_at FROM feeds
+ORDER BY last_fetched_at DESC
+LIMIT $1
+`
+
+func (q *Queries) GetLastFetchedFeeds(ctx context.Context, limit int32) ([]Feed, error) {
+	rows, err := q.db.QueryContext(ctx, getLastFetchedFeeds, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Feed
+	for rows.Next() {
+		var i Feed
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Url,
+			&i.Description,
+			&i.Language,
+			&i.LastFetchedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateFeedLastFetchedAt = `-- name: UpdateFeedLastFetchedAt :exec
 UPDATE feeds
 SET last_fetched_at = NOW()

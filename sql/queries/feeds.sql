@@ -22,3 +22,8 @@ SELECT * FROM feeds;
 INSERT INTO feed_follow (user_id, feed_id)
 VALUES ($1, $2)
 ON CONFLICT (user_id, feed_id) DO NOTHING;
+
+-- name: GetLastFetchedFeeds :many
+SELECT * FROM feeds
+ORDER BY last_fetched_at DESC
+LIMIT $1;
